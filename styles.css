@@ -87,6 +87,7 @@ input {
   display: flex;
   gap: 14px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .brand-mark {
@@ -115,6 +116,20 @@ h1 {
 .brand p {
   margin-top: 4px;
   color: var(--muted);
+}
+
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .controls {

@@ -1,0 +1,84 @@
+﻿<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Music Theory Visualizer</title>
+    <link rel="stylesheet" href="./theory.css" />
+  </head>
+  <body>
+    <main class="theory-app">
+      <header class="theory-header">
+        <div class="title-block">
+          <h1>Music Theory Visualizer</h1>
+          <a class="nav-button" href="./index.html">Fretboard Lab</a>
+        </div>
+
+        <div class="theory-controls">
+          <label>
+            <span>キー</span>
+            <select id="keySelect"></select>
+          </label>
+
+          <div class="tabs" aria-label="mode">
+            <button id="scaleTab" class="active" type="button">スケール</button>
+            <button id="chordTab" type="button">コード</button>
+          </div>
+
+          <label id="scaleControl">
+            <span>スケール</span>
+            <select id="scaleSelect"></select>
+          </label>
+
+          <label id="chordControl" hidden>
+            <span>コード</span>
+            <select id="chordSelect"></select>
+          </label>
+
+          <label>
+            <span>表示</span>
+            <select id="labelSelect">
+              <option value="notes">音名</option>
+              <option value="degrees">度数</option>
+            </select>
+          </label>
+
+          <button id="playHarmony" type="button">和音</button>
+          <button id="playScale" type="button">1オクターブ</button>
+        </div>
+      </header>
+
+      <section class="visual-stack">
+        <section class="theory-section staff-section">
+          <div class="section-heading">
+            <h2>譜面</h2>
+            <p id="patternSummary"></p>
+          </div>
+          <div id="staff" class="staff"></div>
+        </section>
+
+        <section class="theory-section">
+          <div class="section-heading">
+            <h2>ピアノ鍵盤</h2>
+            <p>鍵盤を押すとピアノ音</p>
+          </div>
+          <div id="piano" class="piano" aria-label="Piano keyboard"></div>
+        </section>
+
+        <section class="theory-section">
+          <div class="section-heading">
+            <h2>ギター指板</h2>
+            <p>ポジションを押すとクリーンギター音</p>
+          </div>
+          <div class="fretboard-frame">
+            <div id="fretboard" class="mini-fretboard" aria-label="Guitar fretboard"></div>
+            <div id="fretNumbers" class="fret-numbers"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./theory.js"></script>
+  </body>
+</html>
+
