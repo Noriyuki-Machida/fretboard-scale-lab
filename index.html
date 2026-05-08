@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fretboard Scale Lab</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Controls">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <div>
+            <h1>Fretboard Scale Lab</h1>
+            <p>スケール、コード、クリックマーキングを同じ指板で確認</p>
+          </div>
+        </div>
+
+        <div class="controls">
+          <label>
+            <span>キー</span>
+            <select id="keySelect"></select>
+          </label>
+
+          <label>
+            <span>モード</span>
+            <select id="modeSelect">
+              <option value="scale">スケール</option>
+              <option value="chord">コード</option>
+            </select>
+          </label>
+
+          <label id="scaleControl">
+            <span>スケール</span>
+            <select id="scaleSelect"></select>
+          </label>
+
+          <label id="chordControl" hidden>
+            <span>コード</span>
+            <select id="chordSelect"></select>
+          </label>
+
+          <label>
+            <span>テンポ</span>
+            <input id="tempoInput" type="number" min="40" max="220" step="1" value="90" />
+          </label>
+
+          <label>
+            <span>音符</span>
+            <select id="noteValueSelect">
+              <option value="1">4分</option>
+              <option value="0.5" selected>8分</option>
+              <option value="0.333333">3連</option>
+              <option value="0.25">16分</option>
+            </select>
+          </label>
+
+          <label>
+            <span>オクターブ</span>
+            <select id="octaveSelect">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+
+          <label>
+            <span>開始弦</span>
+            <select id="startStringSelect">
+              <option value="auto" selected>自動</option>
+              <option value="5">6弦 E</option>
+              <option value="4">5弦 A</option>
+              <option value="3">4弦 D</option>
+              <option value="2">3弦 G</option>
+              <option value="1">2弦 B</option>
+              <option value="0">1弦 E</option>
+            </select>
+          </label>
+
+          <label>
+            <span>開始Oct</span>
+            <select id="startOctaveSelect">
+              <option value="auto" selected>自動</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <label>
+            <span>開始音</span>
+            <select id="startToneSelect"></select>
+          </label>
+
+          <label>
+            <span>終了音</span>
+            <select id="stopToneSelect"></select>
+          </label>
+
+          <label>
+            <span>ポジション</span>
+            <select id="positionModeSelect">
+              <option value="box5" selected>5フレット固定</option>
+              <option value="box4">4フレット固定</option>
+              <option value="free">自由</option>
+            </select>
+          </label>
+
+          <label>
+            <span>フレット</span>
+            <select id="fretCountSelect">
+              <option value="12" selected>12</option>
+              <option value="24">24</option>
+            </select>
+          </label>
+
+          <div class="segmented" aria-label="Display type">
+            <button id="displayNotes" class="active" type="button">音名</button>
+            <button id="displayDegrees" type="button">度数</button>
+          </div>
+
+          <label class="check-control">
+            <input id="repeatToggle" type="checkbox" />
+            <span>リピート</span>
+          </label>
+
+          <button id="playUpDown" class="primary" type="button">上行下行</button>
+          <button id="playMarked" type="button">選択音</button>
+          <button id="clearMarks" type="button">クリア</button>
+        </div>
+        <div id="practiceStatus" class="practice-status" role="status"></div>
+      </section>
+
+      <section class="workbench">
+        <div class="fretboard-wrap">
+          <div class="nut-label">Nut</div>
+          <div id="fretboard" class="fretboard" aria-label="Guitar fretboard"></div>
+          <div id="fretNumbers" class="fret-numbers"></div>
+        </div>
+
+        <aside class="panel">
+          <div class="panel-section">
+            <h2>選択中</h2>
+            <div id="selectedSummary" class="summary empty">まだマーキングがありません</div>
+          </div>
+
+          <div class="panel-section">
+            <h2>カリキュレート</h2>
+            <div id="analysisResults" class="result-list"></div>
+          </div>
+
+          <div class="panel-section">
+            <h2>候補コード</h2>
+            <div id="chordResults" class="result-list compact"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
