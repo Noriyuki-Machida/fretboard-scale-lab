@@ -1,4 +1,25 @@
 ﻿const NOTES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const NATURAL_PITCH_CLASS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+const KEY_OPTIONS = [
+  { label: "C", pc: 0, spelling: "C" },
+  { label: "C#", pc: 1, spelling: "C#" },
+  { label: "Db", pc: 1, spelling: "Db" },
+  { label: "D", pc: 2, spelling: "D" },
+  { label: "D#", pc: 3, spelling: "D#" },
+  { label: "Eb", pc: 3, spelling: "Eb" },
+  { label: "E", pc: 4, spelling: "E" },
+  { label: "F", pc: 5, spelling: "F" },
+  { label: "F#", pc: 6, spelling: "F#" },
+  { label: "Gb", pc: 6, spelling: "Gb" },
+  { label: "G", pc: 7, spelling: "G" },
+  { label: "G#", pc: 8, spelling: "G#" },
+  { label: "Ab", pc: 8, spelling: "Ab" },
+  { label: "A", pc: 9, spelling: "A" },
+  { label: "A#", pc: 10, spelling: "A#" },
+  { label: "Bb", pc: 10, spelling: "Bb" },
+  { label: "B", pc: 11, spelling: "B" },
+];
 const STRINGS = [
   { name: "E", midi: 64 },
   { name: "B", midi: 59 },
@@ -64,6 +85,7 @@ const DEGREE_COLORS = [
 
 const state = {
   key: 0,
+  keySpelling: "C",
   mode: "scale",
   scale: "Major",
   chord: "Major",
@@ -116,6 +138,40 @@ function noteName(pc) {
   return NOTES_SHARP[((pc % 12) + 12) % 12];
 }
 
+function tonicLetterIndex(rootSpelling = state.keySpelling) {
+  return LETTERS.indexOf(rootSpelling[0]);
+}
+
+function accidentalForDistance(distance) {
+  if (distance === 0) return "";
+  if (distance === 1) return "#";
+  if (distance === 2) return "##";
+  if (distance === 11) return "b";
+  if (distance === 10) return "bb";
+  return "";
+}
+
+function theoreticalNoteName(pc, root = state.key, rootSpelling = state.keySpelling) {
+  const interval = degreeIndex(pc, root);
+  const degreeNumber = {
+    0: 0,
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 3,
+    6: 4,
+    7: 4,
+    8: 4,
+    9: 5,
+    10: 6,
+    11: 6,
+  }[interval];
+  const letter = LETTERS[(tonicLetterIndex(rootSpelling) + degreeNumber) % LETTERS.length];
+  const distance = (pc - NATURAL_PITCH_CLASS[letter] + 12) % 12;
+  return `${letter}${accidentalForDistance(distance)}`;
+}
+
 function midiToPc(midi) {
   return ((midi % 12) + 12) % 12;
 }
@@ -137,13 +193,13 @@ function degreeIndex(pc, root = state.key) {
 }
 
 function initControls() {
-  NOTES_SHARP.forEach((name, pc) => {
-    els.keySelect.add(new Option(name, String(pc)));
+  KEY_OPTIONS.forEach((key) => {
+    els.keySelect.add(new Option(key.label, `${key.pc}:${key.spelling}`));
   });
   Object.keys(SCALES).forEach((name) => els.scaleSelect.add(new Option(name, name)));
   Object.keys(CHORDS).forEach((name) => els.chordSelect.add(new Option(name, name)));
 
-  els.keySelect.value = String(state.key);
+  els.keySelect.value = `${state.key}:${state.keySpelling}`;
   els.scaleSelect.value = state.scale;
   els.chordSelect.value = state.chord;
   updateToneControls();
@@ -158,7 +214,8 @@ function updateToneControls() {
   els.stopToneSelect.innerHTML = "";
 
   intervals.forEach((interval, index) => {
-    const label = `${degreeLabel((state.key + interval) % 12)} ${noteName((state.key + interval) % 12)}`;
+    const pc = (state.key + interval) % 12;
+    const label = `${degreeLabel(pc)} ${theoreticalNoteName(pc)}`;
     els.startToneSelect.add(new Option(label, String(index)));
     els.stopToneSelect.add(new Option(label, String(index)));
   });
@@ -181,7 +238,7 @@ function makePosition(stringIndex, fret) {
   button.dataset.midi = String(midi);
   button.dataset.pc = String(pc);
   button.classList.toggle("open", fret === 0);
-  button.title = `${STRINGS[stringIndex].name}弦 ${fret}フレット ${noteName(pc)}`;
+  button.title = `${STRINGS[stringIndex].name}弦 ${fret}フレット ${theoreticalNoteName(pc)}`;
 
   const dot = document.createElement("span");
   dot.className = "note-dot";
@@ -265,7 +322,7 @@ function updateFretboard() {
       state.activeBox &&
       fret >= state.activeBox.start &&
       fret <= state.activeBox.end;
-    const label = state.display === "notes" ? noteName(pc) : degreeLabel(pc);
+    const label = state.display === "notes" ? theoreticalNoteName(pc) : degreeLabel(pc);
 
     position.style.setProperty("--note-color", color.bg);
     position.style.setProperty("--note-ink", color.ink);
@@ -308,7 +365,7 @@ function updateSelectedSummary() {
     pill.className = "pill";
     pill.style.setProperty("--note-color", color.bg);
     pill.style.setProperty("--note-ink", color.ink);
-    pill.textContent = `${noteName(pc)} / ${degreeLabel(pc)}`;
+    pill.textContent = `${theoreticalNoteName(pc)} / ${degreeLabel(pc)}`;
     els.selectedSummary.appendChild(pill);
   });
 }
@@ -328,7 +385,7 @@ function scoreCandidate(selected, root, intervals) {
 function rankedMatches(collection, selected, limit = 6) {
   if (!selected.length) return [];
   const rows = [];
-  NOTES_SHARP.forEach((rootName, root) => {
+  KEY_OPTIONS.forEach(({ label: rootName, pc: root }) => {
     Object.entries(collection).forEach(([name, intervals]) => {
       const stats = scoreCandidate(selected, root, intervals);
       if (stats.matching > 0) {
@@ -382,7 +439,7 @@ function renderChordAnalysis() {
 }
 
 function formatPcList(pcs) {
-  return pcs.length ? pcs.map(noteName).join(", ") : "なし";
+  return pcs.length ? pcs.map((pc) => theoreticalNoteName(pc)).join(", ") : "なし";
 }
 
 function updateView() {
@@ -687,7 +744,9 @@ function playMarkedNotes() {
 
 function bindEvents() {
   els.keySelect.addEventListener("change", (event) => {
-    state.key = Number(event.target.value);
+    const [pc, spelling] = event.target.value.split(":");
+    state.key = Number(pc);
+    state.keySpelling = spelling;
     updateView();
   });
   els.modeSelect.addEventListener("change", (event) => {
