@@ -39,7 +39,7 @@ const state = {
   key: 0,
   chordType: "triad",
   octave: "mid",
-  view: "quality",
+  view: "function",
   instrument: "piano",
   bpm: 100,
   fourBeat: false,
