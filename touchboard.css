@@ -213,6 +213,16 @@ select {
   pointer-events: none;
 }
 
+.touch-pad.key-colored .note-pill {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: var(--note);
+  color: var(--note-ink);
+}
+
+.touch-pad.key-colored.root .note-pill {
+  box-shadow: 0 0 0 3px #111827;
+}
+
 .touch-pad.active .note-pill {
   border-color: #111827;
   background: var(--note);

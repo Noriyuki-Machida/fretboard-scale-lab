@@ -36,6 +36,13 @@
           </select>
         </label>
         <label>
+          <span>カラー</span>
+          <select id="colorSelect">
+            <option value="plain" selected>無地</option>
+            <option value="key">キー色</option>
+          </select>
+        </label>
+        <label>
           <span>キー</span>
           <select id="keySelect"></select>
         </label>
@@ -45,6 +52,22 @@
             <option value="12" selected>0-12</option>
             <option value="15">0-15</option>
             <option value="17">0-17</option>
+          </select>
+        </label>
+        <label>
+          <span>リバーブ</span>
+          <select id="reverbSelect">
+            <option value="0" selected>Off</option>
+            <option value="0.18">Room</option>
+            <option value="0.34">Hall</option>
+          </select>
+        </label>
+        <label>
+          <span>ドライブ</span>
+          <select id="driveSelect">
+            <option value="0" selected>Off</option>
+            <option value="60">Crunch</option>
+            <option value="180">Distortion</option>
           </select>
         </label>
         <button id="panicButton" type="button" class="mode-button">リセット</button>

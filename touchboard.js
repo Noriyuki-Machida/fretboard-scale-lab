@@ -29,8 +29,11 @@ const els = {
   fretNumbers: document.querySelector("#fretNumbers"),
   keySelect: document.querySelector("#keySelect"),
   labelSelect: document.querySelector("#labelSelect"),
+  colorSelect: document.querySelector("#colorSelect"),
   toneSelect: document.querySelector("#toneSelect"),
   fretSelect: document.querySelector("#fretSelect"),
+  reverbSelect: document.querySelector("#reverbSelect"),
+  driveSelect: document.querySelector("#driveSelect"),
   panicButton: document.querySelector("#panicButton"),
   activeNotes: document.querySelector("#activeNotes"),
   voiceCount: document.querySelector("#voiceCount"),
@@ -39,10 +42,14 @@ const els = {
 const state = {
   key: 0,
   labels: "notes",
+  colorMode: "plain",
   tone: "clean",
   fretCount: 12,
   bendSemitonesPerFret: 2,
+  reverb: 0,
+  drive: 0,
   audio: null,
+  effects: null,
   voices: new Map(),
 };
 
@@ -80,7 +87,61 @@ function unlockAudio() {
   if (ctx.state === "suspended") {
     void ctx.resume();
   }
+  ensureEffects(ctx);
   return ctx;
+}
+
+function makeImpulse(ctx, seconds = 1.5, decay = 2.4) {
+  const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+  const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+    const data = impulse.getChannelData(channel);
+    for (let i = 0; i < length; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** decay;
+    }
+  }
+  return impulse;
+}
+
+function makeDriveCurve(amount) {
+  const samples = 1024;
+  const curve = new Float32Array(samples);
+  const k = Number(amount);
+  for (let i = 0; i < samples; i += 1) {
+    const x = (i * 2) / samples - 1;
+    curve[i] = k === 0 ? x : ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
+
+function ensureEffects(ctx) {
+  if (state.effects?.ctx === ctx) {
+    updateEffects();
+    return state.effects;
+  }
+
+  const input = ctx.createGain();
+  const drive = ctx.createWaveShaper();
+  const dry = ctx.createGain();
+  const wet = ctx.createGain();
+  const convolver = ctx.createConvolver();
+
+  drive.oversample = "4x";
+  convolver.buffer = makeImpulse(ctx);
+  input.connect(drive);
+  drive.connect(dry).connect(ctx.destination);
+  drive.connect(wet).connect(convolver).connect(ctx.destination);
+
+  state.effects = { ctx, input, drive, dry, wet };
+  updateEffects();
+  return state.effects;
+}
+
+function updateEffects() {
+  if (!state.effects) return;
+  state.effects.drive.curve = makeDriveCurve(state.drive);
+  state.effects.dry.gain.value = Math.max(0.35, 1 - state.reverb * 0.35);
+  state.effects.wet.gain.value = state.reverb;
 }
 
 function envelopeStart(gain, now) {
@@ -112,13 +173,14 @@ function startVoice(pointerId, midi, pad, event) {
   const settings = toneSettings();
   const output = ctx.createGain();
   const filter = ctx.createBiquadFilter();
+  const effects = ensureEffects(ctx);
   const oscillators = [];
   const baseFrequency = frequencyFor(midi);
 
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(settings.filter, now);
   envelopeStart(output, now);
-  filter.connect(output).connect(ctx.destination);
+  filter.connect(output).connect(effects.input);
 
   [1, 2, 3.01].forEach((multiple, index) => {
     const osc = ctx.createOscillator();
@@ -195,6 +257,7 @@ function resetAudio() {
     void state.audio.close();
   }
   state.audio = null;
+  state.effects = null;
   renderStatus();
 }
 
@@ -230,6 +293,8 @@ function renderBoard() {
       pad.type = "button";
       pad.className = "touch-pad";
       pad.classList.toggle("open", fret === 0);
+      pad.classList.toggle("key-colored", state.colorMode === "key");
+      pad.classList.toggle("root", pc(midi) === state.key);
       pad.style.setProperty("--string-width", `${string.width}px`);
       pad.style.setProperty("--note", color.bg);
       pad.style.setProperty("--note-ink", color.ink);
@@ -275,12 +340,24 @@ function bindEvents() {
     state.labels = event.target.value;
     renderBoard();
   });
+  els.colorSelect.addEventListener("change", (event) => {
+    state.colorMode = event.target.value;
+    renderBoard();
+  });
   els.toneSelect.addEventListener("change", (event) => {
     state.tone = event.target.value;
   });
   els.fretSelect.addEventListener("change", (event) => {
     state.fretCount = Number(event.target.value);
     renderBoard();
+  });
+  els.reverbSelect.addEventListener("change", (event) => {
+    state.reverb = Number(event.target.value);
+    updateEffects();
+  });
+  els.driveSelect.addEventListener("change", (event) => {
+    state.drive = Number(event.target.value);
+    updateEffects();
   });
   els.panicButton.addEventListener("click", resetAudio);
   window.addEventListener("blur", stopAllVoices);
