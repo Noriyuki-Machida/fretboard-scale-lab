@@ -1,0 +1,263 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --paper: #ffffff;
+  --ink: #17202a;
+  --muted: #667789;
+  --line: #d8e1eb;
+  --accent: #0f766e;
+  --wood: #f7f2ea;
+  --fret: #bcc7d2;
+  --string: #8793a0;
+  --note: #ef4444;
+  --note-ink: #ffffff;
+  --shadow: 0 20px 48px rgba(23, 32, 42, 0.13);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    "Segoe UI",
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI",
+    sans-serif;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.touch-app {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 12px;
+  width: min(1500px, calc(100vw - 24px));
+  height: 100svh;
+  margin: 0 auto;
+  padding: 14px 0;
+}
+
+.touch-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.1;
+}
+
+p,
+.status-label {
+  color: var(--muted);
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nav-links a,
+.mode-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--accent);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.mode-button.active,
+.nav-links a:first-child {
+  background: var(--accent);
+  color: #fff;
+}
+
+.control-bar,
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.control-bar label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+select {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.status-row {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-row > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.status-row strong {
+  font-size: 18px;
+}
+
+.board-wrap {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.touch-board {
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  height: calc(100% - 30px);
+  min-height: 310px;
+  background: var(--wood);
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-pad {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-right: 2px solid var(--fret);
+  background: transparent;
+  color: var(--note-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.touch-pad.open {
+  border-left: 7px solid #9b8a76;
+}
+
+.touch-pad::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: var(--string-width, 2px);
+  transform: translateY(-50%);
+  background: var(--string);
+  pointer-events: none;
+}
+
+.touch-pad .note-pill {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: clamp(32px, 4.2vw, 48px);
+  height: clamp(32px, 4.2vw, 48px);
+  border: 1.5px solid #c8d1db;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  color: rgba(23, 32, 42, 0.58);
+  font-size: clamp(11px, 1.4vw, 15px);
+  font-weight: 850;
+  pointer-events: none;
+}
+
+.touch-pad.active .note-pill {
+  border-color: #111827;
+  background: var(--note);
+  color: var(--note-ink);
+  transform: scale(1.13);
+  box-shadow:
+    0 0 0 4px #111827,
+    0 0 24px 8px var(--note);
+}
+
+.fret-numbers {
+  display: grid;
+  height: 30px;
+  align-items: center;
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 760px), (max-height: 620px) {
+  .touch-app {
+    gap: 8px;
+    width: min(100vw - 12px, 1500px);
+    padding: 8px 0;
+  }
+
+  .touch-header {
+    align-items: start;
+  }
+
+  .touch-header p {
+    display: none;
+  }
+
+  .control-bar {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .control-bar label {
+    font-size: 11px;
+  }
+
+  select,
+  .nav-links a,
+  .mode-button {
+    min-height: 32px;
+  }
+
+  .status-row {
+    padding: 8px;
+  }
+}

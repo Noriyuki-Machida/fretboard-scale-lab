@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guitar Touch Board</title>
+    <link rel="stylesheet" href="./touchboard.css" />
+  </head>
+  <body>
+    <main class="touch-app">
+      <header class="touch-header">
+        <div>
+          <h1>Guitar Touch Board</h1>
+          <p>押している間だけ鳴る演奏用指板</p>
+        </div>
+        <nav class="nav-links" aria-label="pages">
+          <a href="./index.html">Fretboard Lab</a>
+          <a href="./theory.html">Music Theory</a>
+        </nav>
+      </header>
+
+      <section class="control-bar" aria-label="controls">
+        <label>
+          <span>音色</span>
+          <select id="toneSelect">
+            <option value="clean" selected>Clean Guitar</option>
+            <option value="warm">Warm Guitar</option>
+            <option value="lead">Lead</option>
+          </select>
+        </label>
+        <label>
+          <span>表示</span>
+          <select id="labelSelect">
+            <option value="notes" selected>音名</option>
+            <option value="degrees">度数</option>
+          </select>
+        </label>
+        <label>
+          <span>キー</span>
+          <select id="keySelect"></select>
+        </label>
+        <label>
+          <span>フレット</span>
+          <select id="fretSelect">
+            <option value="12" selected>0-12</option>
+            <option value="15">0-15</option>
+            <option value="17">0-17</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="status-row" aria-live="polite">
+        <div>
+          <span class="status-label">鳴っている音</span>
+          <strong id="activeNotes">-</strong>
+        </div>
+        <div>
+          <span class="status-label">同時押し</span>
+          <strong id="voiceCount">0</strong>
+        </div>
+      </section>
+
+      <section class="board-wrap">
+        <div id="touchBoard" class="touch-board" aria-label="Playable guitar fretboard"></div>
+        <div id="fretNumbers" class="fret-numbers" aria-hidden="true"></div>
+      </section>
+    </main>
+
+    <script src="./touchboard.js"></script>
+  </body>
+</html>
