@@ -39,12 +39,16 @@
           <span>カラー</span>
           <select id="colorSelect">
             <option value="plain" selected>無地</option>
-            <option value="key">キー色</option>
+            <option value="key">スケール色</option>
           </select>
         </label>
         <label>
           <span>キー</span>
           <select id="keySelect"></select>
+        </label>
+        <label>
+          <span>スケール</span>
+          <select id="scaleSelect"></select>
         </label>
         <label>
           <span>フレット</span>
@@ -77,6 +81,10 @@
         <div>
           <span class="status-label">鳴っている音</span>
           <strong id="activeNotes">-</strong>
+        </div>
+        <div>
+          <span class="status-label">コード</span>
+          <strong id="chordName">-</strong>
         </div>
         <div>
           <span class="status-label">同時押し</span>
