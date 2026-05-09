@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diatonic Chord Pad</title>
+    <link rel="stylesheet" href="./diatonic.css" />
+  </head>
+  <body>
+    <main class="diatonic-app">
+      <header class="app-header">
+        <div>
+          <h1>Diatonic Chord Pad</h1>
+          <p>キー内のコード機能をワンボタンで聴く</p>
+        </div>
+        <nav class="nav-links" aria-label="pages">
+          <a href="./index.html">Fretboard Lab</a>
+          <a href="./theory.html">Music Theory</a>
+          <a href="./touchboard.html">Touch Board</a>
+        </nav>
+      </header>
+
+      <section class="control-bar" aria-label="controls">
+        <label>
+          <span>キー</span>
+          <select id="keySelect"></select>
+        </label>
+        <label>
+          <span>タイプ</span>
+          <select id="chordTypeSelect">
+            <option value="triad" selected>Triad</option>
+            <option value="seventh">7th</option>
+          </select>
+        </label>
+        <label>
+          <span>コード音</span>
+          <select id="octaveSelect">
+            <option value="low">Lo</option>
+            <option value="mid" selected>Mid</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label>
+          <span>表示</span>
+          <select id="viewSelect">
+            <option value="plain">無地</option>
+            <option value="quality" selected>コード</option>
+            <option value="function">機能</option>
+          </select>
+        </label>
+        <label>
+          <span>音色</span>
+          <select id="instrumentSelect">
+            <option value="piano" selected>Piano</option>
+            <option value="guitar">Guitar</option>
+            <option value="strings">Strings</option>
+            <option value="organ">Organ</option>
+          </select>
+        </label>
+        <label>
+          <span>BPM</span>
+          <input id="bpmInput" type="number" min="40" max="240" step="1" value="100" />
+        </label>
+        <button id="fourBeatButton" type="button">4つ打ち</button>
+        <button id="stopButton" type="button">停止</button>
+      </section>
+
+      <section class="status-panel">
+        <div>
+          <span>選択コード</span>
+          <strong id="currentChord">-</strong>
+        </div>
+        <div>
+          <span>機能</span>
+          <strong id="currentFunction">-</strong>
+        </div>
+      </section>
+
+      <section class="pad-section" aria-label="chord pads">
+        <div id="chordPads" class="chord-pads"></div>
+      </section>
+
+      <section class="keyboard-section" aria-label="keyboard">
+        <div id="keyboard" class="keyboard"></div>
+      </section>
+    </main>
+
+    <script src="./diatonic.js"></script>
+  </body>
+</html>
