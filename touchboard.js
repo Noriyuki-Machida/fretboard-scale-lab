@@ -14,6 +14,7 @@ const DEGREE_COLORS = [
   { bg: "#7c3aed", ink: "#ffffff" },
   { bg: "#a855f7", ink: "#ffffff" },
 ];
+const MAJOR_SCALE_INTERVALS = new Set([0, 2, 4, 5, 7, 9, 11]);
 
 const STRINGS = [
   { name: "E", midi: 64, width: 1 },
@@ -68,6 +69,10 @@ function labelFor(midi) {
 
 function colorFor(midi) {
   return DEGREE_COLORS[degreeIndex(pc(midi))];
+}
+
+function isKeyTone(midi) {
+  return MAJOR_SCALE_INTERVALS.has(degreeIndex(pc(midi)));
 }
 
 function frequencyFor(midi) {
@@ -289,12 +294,13 @@ function renderBoard() {
     for (let fret = 0; fret <= state.fretCount; fret += 1) {
       const midi = string.midi + fret;
       const color = colorFor(midi);
+      const keyTone = isKeyTone(midi);
       const pad = document.createElement("button");
       pad.type = "button";
       pad.className = "touch-pad";
       pad.classList.toggle("open", fret === 0);
-      pad.classList.toggle("key-colored", state.colorMode === "key");
-      pad.classList.toggle("root", pc(midi) === state.key);
+      pad.classList.toggle("key-colored", state.colorMode === "key" && keyTone);
+      pad.classList.toggle("root", state.colorMode === "key" && keyTone && pc(midi) === state.key);
       pad.style.setProperty("--string-width", `${string.width}px`);
       pad.style.setProperty("--note", color.bg);
       pad.style.setProperty("--note-ink", color.ink);
