@@ -40,6 +40,7 @@ const state = {
   labels: "notes",
   tone: "clean",
   fretCount: 12,
+  bendRange: 2,
   audio: null,
   voices: new Map(),
 };
@@ -95,7 +96,7 @@ function toneSettings() {
   return { type: "triangle", filter: 2600, mix: [0.9, 0.16, 0.05] };
 }
 
-function startVoice(pointerId, midi, pad) {
+function startVoice(pointerId, midi, pad, event) {
   stopVoice(pointerId);
   const ctx = audioContext();
   const now = ctx.currentTime;
@@ -103,6 +104,7 @@ function startVoice(pointerId, midi, pad) {
   const output = ctx.createGain();
   const filter = ctx.createBiquadFilter();
   const oscillators = [];
+  const baseFrequency = frequencyFor(midi);
 
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(settings.filter, now);
@@ -113,15 +115,41 @@ function startVoice(pointerId, midi, pad) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = settings.type;
-    osc.frequency.setValueAtTime(frequencyFor(midi) * multiple, now);
+    osc.frequency.setValueAtTime(baseFrequency * multiple, now);
     gain.gain.setValueAtTime(settings.mix[index], now);
     osc.connect(gain).connect(filter);
     osc.start(now);
-    oscillators.push(osc);
+    oscillators.push({ osc, multiple });
   });
 
   pad.classList.add("active");
-  state.voices.set(pointerId, { midi, pad, output, oscillators });
+  state.voices.set(pointerId, {
+    midi,
+    pad,
+    output,
+    oscillators,
+    baseFrequency,
+    startX: event.clientX,
+    bend: 0,
+  });
+  renderStatus();
+}
+
+function bendVoice(pointerId, event) {
+  const voice = state.voices.get(pointerId);
+  if (!voice) return;
+  const ctx = audioContext();
+  const width = Math.max(voice.pad.getBoundingClientRect().width, 1);
+  const dragRatio = Math.max(-1, Math.min(1, (event.clientX - voice.startX) / width));
+  const bend = dragRatio * state.bendRange;
+  const bendRatio = 2 ** (bend / 12);
+  const now = ctx.currentTime;
+  voice.bend = bend;
+  voice.oscillators.forEach(({ osc, multiple }) => {
+    osc.frequency.cancelScheduledValues(now);
+    osc.frequency.setTargetAtTime(voice.baseFrequency * multiple * bendRatio, now, 0.015);
+  });
+  voice.pad.style.setProperty("--bend-x", `${dragRatio * 10}px`);
   renderStatus();
 }
 
@@ -129,6 +157,7 @@ function stopVoice(pointerId) {
   const voice = state.voices.get(pointerId);
   if (!voice) return;
   voice.pad.classList.remove("active");
+  voice.pad.style.removeProperty("--bend-x");
   envelopeStop(voice);
   state.voices.delete(pointerId);
   renderStatus();
@@ -139,7 +168,10 @@ function stopAllVoices() {
 }
 
 function renderStatus() {
-  const notes = [...state.voices.values()].map((voice) => NOTE_NAMES[pc(voice.midi)]);
+  const notes = [...state.voices.values()].map((voice) => {
+    const bend = Math.round(voice.bend * 10) / 10;
+    return `${NOTE_NAMES[pc(voice.midi)]}${bend ? ` ${bend > 0 ? "+" : ""}${bend}` : ""}`;
+  });
   els.activeNotes.textContent = notes.length ? notes.join("  ") : "-";
   els.voiceCount.textContent = String(notes.length);
 }
@@ -156,6 +188,8 @@ function renderBoard() {
   const columns = state.fretCount + 1;
   els.board.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
   els.fretNumbers.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  els.board.style.setProperty("--columns", String(columns));
+  els.fretNumbers.style.setProperty("--columns", String(columns));
 
   STRINGS.forEach((string, stringIndex) => {
     for (let fret = 0; fret <= state.fretCount; fret += 1) {
@@ -180,7 +214,11 @@ function renderBoard() {
       pad.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         pad.setPointerCapture(event.pointerId);
-        startVoice(event.pointerId, midi, pad);
+        startVoice(event.pointerId, midi, pad, event);
+      });
+      pad.addEventListener("pointermove", (event) => {
+        event.preventDefault();
+        bendVoice(event.pointerId, event);
       });
       pad.addEventListener("pointerup", (event) => stopVoice(event.pointerId));
       pad.addEventListener("pointercancel", (event) => stopVoice(event.pointerId));

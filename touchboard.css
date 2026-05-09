@@ -211,7 +211,7 @@ select {
   border-color: #111827;
   background: var(--note);
   color: var(--note-ink);
-  transform: scale(1.13);
+  transform: translateX(var(--bend-x, 0)) scale(1.13);
   box-shadow:
     0 0 0 4px #111827,
     0 0 24px 8px var(--note);
@@ -259,5 +259,91 @@ select {
 
   .status-row {
     padding: 8px;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 760px) {
+  body {
+    overflow: hidden;
+  }
+
+  .board-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .touch-board,
+  .fret-numbers {
+    min-width: calc(var(--columns) * 58px);
+  }
+
+  .touch-board {
+    min-height: 360px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  .touch-app {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 6px;
+    width: min(100vw - 10px, 1500px);
+    padding: 6px 0;
+  }
+
+  .touch-header {
+    gap: 8px;
+  }
+
+  .touch-header p,
+  .status-row {
+    display: none;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .nav-links {
+    gap: 6px;
+  }
+
+  .nav-links a {
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .control-bar {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .control-bar label {
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+  }
+
+  select {
+    min-height: 28px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
+  .touch-board {
+    height: calc(100% - 24px);
+    min-height: 0;
+  }
+
+  .fret-numbers {
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .touch-pad .note-pill {
+    width: clamp(28px, 5.2vh, 40px);
+    height: clamp(28px, 5.2vh, 40px);
+    font-size: 11px;
   }
 }
