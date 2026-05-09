@@ -31,6 +31,7 @@ const els = {
   labelSelect: document.querySelector("#labelSelect"),
   toneSelect: document.querySelector("#toneSelect"),
   fretSelect: document.querySelector("#fretSelect"),
+  panicButton: document.querySelector("#panicButton"),
   activeNotes: document.querySelector("#activeNotes"),
   voiceCount: document.querySelector("#voiceCount"),
 };
@@ -40,7 +41,7 @@ const state = {
   labels: "notes",
   tone: "clean",
   fretCount: 12,
-  bendRange: 2,
+  bendRange: 12,
   audio: null,
   voices: new Map(),
 };
@@ -74,6 +75,14 @@ function audioContext() {
   return state.audio;
 }
 
+function unlockAudio() {
+  const ctx = audioContext();
+  if (ctx.state === "suspended") {
+    void ctx.resume();
+  }
+  return ctx;
+}
+
 function envelopeStart(gain, now) {
   gain.gain.cancelScheduledValues(now);
   gain.gain.setValueAtTime(0.0001, now);
@@ -87,7 +96,7 @@ function envelopeStop(voice) {
   voice.output.gain.cancelScheduledValues(now);
   voice.output.gain.setValueAtTime(Math.max(voice.output.gain.value, 0.0001), now);
   voice.output.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-  voice.oscillators.forEach((osc) => osc.stop(now + 0.18));
+  voice.oscillators.forEach(({ osc }) => osc.stop(now + 0.18));
 }
 
 function toneSettings() {
@@ -98,7 +107,7 @@ function toneSettings() {
 
 function startVoice(pointerId, midi, pad, event) {
   stopVoice(pointerId);
-  const ctx = audioContext();
+  const ctx = unlockAudio();
   const now = ctx.currentTime;
   const settings = toneSettings();
   const output = ctx.createGain();
@@ -165,6 +174,28 @@ function stopVoice(pointerId) {
 
 function stopAllVoices() {
   [...state.voices.keys()].forEach((pointerId) => stopVoice(pointerId));
+}
+
+function resetAudio() {
+  [...state.voices.values()].forEach((voice) => {
+    voice.pad.classList.remove("active");
+    voice.pad.style.removeProperty("--bend-x");
+    voice.output.gain.cancelScheduledValues(0);
+    voice.output.gain.value = 0.0001;
+    voice.oscillators.forEach(({ osc }) => {
+      try {
+        osc.stop();
+      } catch {
+        // Already stopped.
+      }
+    });
+  });
+  state.voices.clear();
+  if (state.audio && state.audio.state !== "closed") {
+    void state.audio.close();
+  }
+  state.audio = null;
+  renderStatus();
 }
 
 function renderStatus() {
@@ -251,6 +282,7 @@ function bindEvents() {
     state.fretCount = Number(event.target.value);
     renderBoard();
   });
+  els.panicButton.addEventListener("click", resetAudio);
   window.addEventListener("blur", stopAllVoices);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopAllVoices();

@@ -130,16 +130,22 @@ select {
 .status-row {
   justify-content: space-between;
   align-items: center;
+  min-width: 0;
 }
 
 .status-row > div {
   display: flex;
   gap: 8px;
   align-items: baseline;
+  min-width: 0;
 }
 
 .status-row strong {
+  max-width: min(62vw, 760px);
+  overflow: hidden;
   font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .board-wrap {
