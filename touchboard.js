@@ -467,6 +467,8 @@ function renderBoard() {
 }
 
 function bindEvents() {
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
+  document.addEventListener("selectstart", (event) => event.preventDefault());
   els.keySelect.addEventListener("change", (event) => {
     state.key = Number(event.target.value);
     renderBoard();

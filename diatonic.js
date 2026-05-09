@@ -366,6 +366,8 @@ function render() {
 }
 
 function bindEvents() {
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
+  document.addEventListener("selectstart", (event) => event.preventDefault());
   NOTE_NAMES.forEach((note, index) => els.keySelect.add(new Option(note, String(index))));
   els.keySelect.value = String(state.key);
   els.bpmInput.value = String(state.bpm);
