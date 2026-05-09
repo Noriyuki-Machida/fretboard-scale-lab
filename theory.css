@@ -169,14 +169,37 @@ button {
 }
 
 .staff {
-  min-height: 210px;
-  padding: 6px 12px 18px;
+  min-height: 240px;
+  padding: 6px 12px 28px;
   overflow-x: auto;
 }
 
 .staff svg {
   display: block;
-  min-width: 860px;
+  min-width: 900px;
+}
+
+.staff .vf-stavenote {
+  cursor: pointer;
+}
+
+.staff-linked-note {
+  cursor: pointer;
+}
+
+.staff .vf-stavenote:hover {
+  filter: brightness(1.08);
+}
+
+.staff .vf-stavenote.linked-playing,
+.staff-linked-note.linked-playing {
+  filter: brightness(1.2) saturate(1.35) drop-shadow(0 0 7px var(--note-color));
+}
+
+.staff-linked-note.linked-playing path,
+.staff-linked-note.linked-playing ellipse {
+  stroke: #111827 !important;
+  stroke-width: 2.6px !important;
 }
 
 .staff-line {
@@ -193,6 +216,10 @@ button {
   cursor: pointer;
 }
 
+.staff-note.linked-playing {
+  filter: brightness(1.18) saturate(1.25);
+}
+
 .note-head {
   fill: var(--note-color);
   stroke: #111827;
@@ -206,10 +233,24 @@ button {
   text-anchor: middle;
 }
 
-.clef {
+.clef-image {
+  pointer-events: none;
+}
+
+.clef-label {
+  pointer-events: none;
+}
+
+.clef-label rect {
+  fill: #f5f8fb;
+  stroke: var(--line);
+}
+
+.clef-label text {
   fill: var(--ink);
-  font-family: "Times New Roman", serif;
-  font-size: 54px;
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
 }
 
 .staff-accidental {
@@ -226,6 +267,11 @@ button {
   margin: 0 18px 20px;
   overflow-x: auto;
   white-space: nowrap;
+}
+
+.piano-track {
+  position: relative;
+  height: 190px;
 }
 
 .white-key,
@@ -312,7 +358,9 @@ button {
 }
 
 .white-key.playing .key-label,
-.black-key.playing .key-label {
+.black-key.playing .key-label,
+.white-key.linked-playing .key-label,
+.black-key.linked-playing .key-label {
   filter: brightness(1.22) saturate(1.2);
   box-shadow:
     0 0 0 3px #111827,
@@ -327,8 +375,8 @@ button {
 .mini-fretboard {
   display: grid;
   grid-template-rows: repeat(6, 48px);
-  grid-template-columns: repeat(13, 68px);
-  min-width: 884px;
+  grid-template-columns: repeat(25, 68px);
+  min-width: 1700px;
   border: 1px solid var(--line);
   background: #fff;
 }
@@ -395,7 +443,8 @@ button {
   box-shadow: 0 0 0 3px #111827;
 }
 
-.fret-position.playing .fret-dot {
+.fret-position.playing .fret-dot,
+.fret-position.linked-playing .fret-dot {
   filter: brightness(1.22) saturate(1.2);
   transform: scale(1.1);
   box-shadow:
@@ -405,8 +454,8 @@ button {
 
 .fret-numbers {
   display: grid;
-  grid-template-columns: repeat(13, 68px);
-  min-width: 884px;
+  grid-template-columns: repeat(25, 68px);
+  min-width: 1700px;
   margin-top: 10px;
   color: var(--muted);
   text-align: center;
@@ -421,5 +470,46 @@ button {
 
   h1 {
     font-size: 24px;
+  }
+}
+
+@media (max-height: 500px), (orientation: landscape) and (max-width: 900px) {
+  .theory-header {
+    position: static;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 8px 0 10px;
+    backdrop-filter: none;
+  }
+
+  .title-block {
+    gap: 8px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .nav-button,
+  select,
+  button {
+    min-height: 32px;
+  }
+
+  .theory-controls {
+    gap: 6px;
+  }
+
+  .theory-controls label {
+    gap: 3px;
+    font-size: 11px;
+  }
+
+  .visual-stack {
+    gap: 10px;
+  }
+
+  .section-heading {
+    padding: 10px 14px 6px;
   }
 }

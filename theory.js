@@ -101,6 +101,7 @@ const state = {
   chord: "Major",
   labels: "notes",
   audio: null,
+  resizeTimer: null,
 };
 
 const els = {
@@ -310,6 +311,20 @@ function flash(element) {
   window.setTimeout(() => element.classList.remove("playing"), 280);
 }
 
+function clearLinkedHighlights() {
+  els.staff.querySelectorAll(".linked-playing").forEach((element) => element.classList.remove("linked-playing"));
+  els.piano.querySelectorAll(".linked-playing").forEach((element) => element.classList.remove("linked-playing"));
+  els.fretboard.querySelectorAll(".linked-playing").forEach((element) => element.classList.remove("linked-playing"));
+}
+
+function highlightLinkedMidi(midi) {
+  clearLinkedHighlights();
+  els.staff.querySelectorAll(`[data-midi="${midi}"]`).forEach((element) => element.classList.add("linked-playing"));
+  els.piano.querySelectorAll(`[data-midi="${midi}"]`).forEach((element) => element.classList.add("linked-playing"));
+  els.fretboard.querySelectorAll(`[data-midi="${midi}"]`).forEach((element) => element.classList.add("linked-playing"));
+  window.setTimeout(clearLinkedHighlights, 420);
+}
+
 function initControls() {
   KEY_OPTIONS.forEach((key) => els.keySelect.add(new Option(key.label, `${key.pc}:${key.spelling}`)));
   Object.keys(SCALES).forEach((scale) => els.scaleSelect.add(new Option(scale, scale)));
@@ -325,9 +340,42 @@ function renderSummary() {
   els.patternSummary.textContent = `${state.keySpelling} ${name}: ${notes}`;
 }
 
+function svgEl(tag, attrs = {}) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
+  return element;
+}
+
+function drawClefImage(svg, href, x, y, width, height) {
+  const image = svgEl("image", {
+    class: "clef-image",
+    href,
+    x,
+    y,
+    width,
+    height,
+    preserveAspectRatio: "xMidYMid meet",
+  });
+  image.setAttributeNS("http://www.w3.org/1999/xlink", "href", href);
+  svg.appendChild(image);
+}
+
+function drawClefLabel(svg, x, y, text) {
+  const group = svgEl("g", { class: "clef-label" });
+  const rect = svgEl("rect", { x: x - 18, y: y - 14, width: 58, height: 24, rx: 5 });
+  const label = svgEl("text", { x, y: y + 3 });
+  label.textContent = text;
+  group.append(rect, label);
+  svg.appendChild(group);
+}
 function renderStaff() {
+  if (window.Vex?.Flow) {
+    renderStaffWithVexFlow();
+    return;
+  }
+
   const intervals = activeIntervals();
-  const width = Math.max(900, 150 + intervals.length * 92);
+  const width = Math.max(900, els.staff.clientWidth - 24, 190 + intervals.length * 92);
   const height = 184;
   const trebleTop = 34;
   const bassTop = 110;
@@ -339,6 +387,7 @@ function renderStaff() {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
+  svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
   [trebleTop, bassTop].forEach((top) => {
     for (let i = 0; i < 5; i += 1) {
@@ -352,20 +401,8 @@ function renderStaff() {
     }
   });
 
-  const trebleClef = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  trebleClef.setAttribute("class", "clef");
-  trebleClef.setAttribute("x", "50");
-  trebleClef.setAttribute("y", "78");
-  trebleClef.textContent = "\uD834\uDD1E";
-  svg.appendChild(trebleClef);
-
-  const bassClef = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  bassClef.setAttribute("class", "clef");
-  bassClef.setAttribute("x", "52");
-  bassClef.setAttribute("y", "145");
-  bassClef.setAttribute("font-size", "42");
-  bassClef.textContent = "\uD834\uDD22";
-  svg.appendChild(bassClef);
+  drawClefLabel(svg, 56, trebleTop + 20, "Treble");
+  drawClefLabel(svg, 56, bassTop + 20, "Bass");
 
   function drawLedgerLines(x, y, bottomLineY, topLineY) {
     for (let ledgerY = bottomLineY + lineGap; ledgerY <= y + 0.1; ledgerY += lineGap) {
@@ -393,7 +430,7 @@ function renderStaff() {
     const midi = baseMidi + interval;
     const writtenName = noteName(notePc);
     const step = diatonicStepForWrittenNote(midi, writtenName);
-    const x = 170 + index * 86;
+    const x = 210 + index * 86;
     const bottomStep = bottomLineY === bassBottomLineY ? -10 : 2;
     const y = bottomLineY - (step - bottomStep) * 5 + yOffset;
     const color = colorFor(notePc);
@@ -403,8 +440,16 @@ function renderStaff() {
 
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.setAttribute("class", "staff-note");
+    group.setAttribute("data-midi", String(midi));
     group.style.setProperty("--note-color", color.bg);
-    group.addEventListener("click", () => (instrument === "guitar" ? playGuitar(midi) : playPiano(midi)));
+    group.addEventListener("click", () => {
+      highlightLinkedMidi(midi);
+      if (instrument === "guitar") {
+        playGuitar(midi);
+      } else {
+        playPiano(midi);
+      }
+    });
 
     if (accidental) {
       const accidentalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -442,13 +487,150 @@ function renderStaff() {
 
   els.staff.replaceChildren(svg);
 }
+
+function vexNoteName(notePc) {
+  return noteName(notePc).replace("b", "b").replace("#", "#").toLowerCase();
+}
+
+function vexKeyForMidi(midi) {
+  const sharpNames = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
+  return `${sharpNames[pc(midi)]}/${Math.floor(midi / 12) - 1}`;
+}
+
+function vexDurationForMode() {
+  return state.mode === "scale" ? "q" : "h";
+}
+
+function renderStaffWithVexFlow() {
+  const VF = window.Vex.Flow;
+  const intervals = activeIntervals();
+  const width = Math.max(900, els.staff.clientWidth - 24, 180 + intervals.length * 78);
+  const height = 230;
+
+  els.staff.innerHTML = "";
+  const renderer = new VF.Renderer(els.staff, VF.Renderer.Backends.SVG);
+  renderer.resize(width, height);
+  const context = renderer.getContext();
+  context.setFont("Arial", 10);
+
+  const treble = new VF.Stave(30, 18, width - 60);
+  treble.addClef("treble");
+  if (typeof treble.setNoteStartX === "function") treble.setNoteStartX(118);
+  treble.setContext(context).draw();
+
+  const bass = new VF.Stave(30, 112, width - 60);
+  bass.addClef("bass");
+  if (typeof bass.setNoteStartX === "function") bass.setNoteStartX(118);
+  bass.setContext(context).draw();
+
+  function makeNote(interval, clef, rootMidi) {
+    const notePc = (state.key + interval) % 12;
+    const midi = rootMidi + interval;
+    const duration = vexDurationForMode();
+    const note = new VF.StaveNote({
+      clef,
+      keys: [vexKeyForMidi(midi)],
+      duration,
+    });
+    note.linkedMidi = midi;
+    note.linkedInstrument = clef === "bass" ? "guitar" : "piano";
+    note.linkedPitchClass = notePc;
+    note.setAttribute("data-midi", String(midi));
+    note.setAttribute("data-degree", String(degreeIndex(notePc)));
+    const accidental = accidentalSymbol(NOTES_SHARP[notePc]);
+    if (accidental) note.addModifier(new VF.Accidental(accidental), 0);
+    if (clef !== "bass") {
+      const annotation = new VF.Annotation(labelFor(notePc, interval)).setFont("Arial", 10);
+      annotation.setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM);
+      note.addModifier(annotation, 0);
+    }
+    return note;
+  }
+
+  const trebleRootMidi = 60 + state.key;
+  const bassRootMidi = 36 + state.key;
+  const trebleNotes = intervals.map((interval) => makeNote(interval, "treble", trebleRootMidi));
+  const bassNotes = intervals.map((interval) => makeNote(interval, "bass", bassRootMidi));
+
+  const trebleVoice = new VF.Voice({ num_beats: trebleNotes.length, beat_value: 4 });
+  trebleVoice.setStrict(false);
+  trebleVoice.addTickables(trebleNotes);
+  const formatWidth = state.mode === "chord" ? Math.max(260, intervals.length * 34) : Math.max(520, intervals.length * 70);
+  new VF.Formatter().joinVoices([trebleVoice]).format([trebleVoice], formatWidth);
+  trebleVoice.draw(context, treble);
+
+  const bassVoice = new VF.Voice({ num_beats: bassNotes.length, beat_value: 4 });
+  bassVoice.setStrict(false);
+  bassVoice.addTickables(bassNotes);
+  new VF.Formatter().joinVoices([bassVoice]).format([bassVoice], formatWidth);
+  bassVoice.draw(context, bass);
+  const allNotes = [...trebleNotes, ...bassNotes];
+  colorizeVexFlowNotes(allNotes);
+  addVexFlowLinkTargets(allNotes);
+}
+
+function colorizeVexFlowNotes(notes = []) {
+  let paintedFromNotes = false;
+  notes.forEach((note) => {
+    const element = typeof note.getSVGElement === "function" ? note.getSVGElement() : null;
+    if (!element) return;
+    const color = colorFor(note.linkedPitchClass);
+    element.querySelectorAll("path, ellipse").forEach((shape) => {
+      shape.style.fill = color.bg;
+      shape.style.stroke = "#111827";
+    });
+    paintedFromNotes = true;
+  });
+  if (paintedFromNotes) return;
+
+  const intervals = activeIntervals();
+  const noteGroups = [...els.staff.querySelectorAll(".vf-stavenote")];
+  noteGroups.forEach((group, index) => {
+    const interval = intervals[index % intervals.length];
+    const notePc = (state.key + interval) % 12;
+    const color = colorFor(notePc);
+    group.querySelectorAll("path, ellipse").forEach((shape) => {
+      shape.style.fill = color.bg;
+      shape.style.stroke = "#111827";
+    });
+  });
+
+  DEGREE_COLORS.forEach((color, index) => {
+    els.staff.querySelectorAll(`[data-degree="${index}"] path, [data-degree="${index}"] ellipse`).forEach((shape) => {
+      shape.style.fill = color.bg;
+      shape.style.stroke = "#111827";
+    });
+  });
+}
+
+function addVexFlowLinkTargets(notes) {
+  notes.forEach((note) => {
+    const element = typeof note.getSVGElement === "function" ? note.getSVGElement() : null;
+    if (!element) return;
+
+    element.setAttribute("data-midi", String(note.linkedMidi));
+    element.classList.add("staff-linked-note");
+    element.style.setProperty("--note-color", colorFor(note.linkedPitchClass).bg);
+    element.addEventListener("click", () => {
+      highlightLinkedMidi(note.linkedMidi);
+      if (note.linkedInstrument === "guitar") {
+        playGuitar(note.linkedMidi);
+      } else {
+        playPiano(note.linkedMidi);
+      }
+    });
+  });
+}
 function renderPiano() {
-  const startMidi = 48;
-  const endMidi = 83;
+  const startMidi = 36;
+  const endMidi = 96;
   const whitePcs = new Set([0, 2, 4, 5, 7, 9, 11]);
   const pattern = activePitchClasses();
   let whiteIndex = 0;
   els.piano.innerHTML = "";
+  const track = document.createElement("div");
+  track.className = "piano-track";
+  els.piano.appendChild(track);
 
   for (let midi = startMidi; midi <= endMidi; midi += 1) {
     const notePc = pc(midi);
@@ -464,15 +646,17 @@ function renderPiano() {
       key.style.setProperty("--note-ink", color.ink);
       key.classList.toggle("in-pattern", inPattern);
       key.classList.toggle("root", notePc === state.key && inPattern);
+      key.dataset.midi = String(midi);
       const label = document.createElement("span");
       label.className = "key-label";
       label.textContent = inPattern ? labelFor(notePc) : "";
       key.appendChild(label);
       key.addEventListener("click", () => {
         playPiano(midi);
+        highlightLinkedMidi(midi);
         flash(key);
       });
-      els.piano.appendChild(key);
+      track.appendChild(key);
       whiteIndex += 1;
     } else {
       const key = document.createElement("button");
@@ -483,19 +667,21 @@ function renderPiano() {
       key.style.setProperty("--note-ink", color.ink);
       key.classList.toggle("in-pattern", inPattern);
       key.classList.toggle("root", notePc === state.key && inPattern);
+      key.dataset.midi = String(midi);
       const label = document.createElement("span");
       label.className = "key-label";
       label.textContent = inPattern ? labelFor(notePc) : "";
       key.appendChild(label);
       key.addEventListener("click", () => {
         playPiano(midi);
+        highlightLinkedMidi(midi);
         flash(key);
       });
-      els.piano.appendChild(key);
+      track.appendChild(key);
     }
   }
 
-  els.piano.style.minWidth = `${whiteIndex * 52}px`;
+  track.style.width = `${whiteIndex * 52 + 96}px`;
 }
 
 function renderFretboard() {
@@ -504,7 +690,7 @@ function renderFretboard() {
   els.fretNumbers.innerHTML = "";
 
   STRINGS.forEach((string, stringIndex) => {
-    for (let fret = 0; fret <= 12; fret += 1) {
+    for (let fret = 0; fret <= 24; fret += 1) {
       const midi = string.midi + fret;
       const notePc = pc(midi);
       const inPattern = pattern.has(notePc);
@@ -517,6 +703,7 @@ function renderFretboard() {
       position.classList.toggle("root", notePc === state.key && inPattern);
       position.style.setProperty("--note-color", color.bg);
       position.style.setProperty("--note-ink", color.ink);
+      position.dataset.midi = String(midi);
 
       const dot = document.createElement("span");
       dot.className = "fret-dot";
@@ -525,6 +712,7 @@ function renderFretboard() {
 
       position.addEventListener("click", () => {
         playGuitar(midi);
+        highlightLinkedMidi(midi);
         flash(position);
       });
 
@@ -532,7 +720,7 @@ function renderFretboard() {
     }
   });
 
-  for (let fret = 0; fret <= 12; fret += 1) {
+  for (let fret = 0; fret <= 24; fret += 1) {
     const number = document.createElement("div");
     number.textContent = fret === 0 ? "Open" : String(fret);
     els.fretNumbers.appendChild(number);
@@ -584,10 +772,15 @@ function bindEvents() {
   });
   els.playHarmony.addEventListener("click", playHarmony);
   els.playScale.addEventListener("click", playScaleOctave);
+  window.addEventListener("resize", () => {
+    window.clearTimeout(state.resizeTimer);
+    state.resizeTimer = window.setTimeout(renderStaff, 120);
+  });
 }
 
 initControls();
 bindEvents();
 render();
+
 
 

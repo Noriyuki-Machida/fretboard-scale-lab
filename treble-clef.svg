@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 150" role="img" aria-label="treble clef">
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      stroke-width="5.2"
+      d="M42 9
+         C31 28 31 47 42 73
+         C52 96 50 117 35 128
+         C23 137 8 132 7 118
+         C6 105 18 97 29 103
+         C40 109 39 125 26 126"
+    />
+    <path
+      stroke-width="4.2"
+      d="M42 9
+         C36 36 35 63 42 91
+         C49 119 44 139 28 145"
+    />
+    <path
+      stroke-width="5.2"
+      d="M26 103
+         C42 91 56 76 51 58
+         C47 42 27 42 22 56
+         C17 71 31 85 48 77
+         C66 68 68 45 54 34
+         C42 24 26 30 23 43"
+    />
+    <ellipse
+      cx="33"
+      cy="78"
+      rx="18"
+      ry="12"
+      transform="rotate(-23 33 78)"
+      stroke-width="4.6"
+    />
+  </g>
+  <circle cx="37" cy="78" r="3.2" fill="#17202a"/>
+</svg>
