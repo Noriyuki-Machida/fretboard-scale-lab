@@ -41,7 +41,7 @@ const state = {
   labels: "notes",
   tone: "clean",
   fretCount: 12,
-  bendRange: 12,
+  bendSemitonesPerFret: 2,
   audio: null,
   voices: new Map(),
 };
@@ -149,8 +149,8 @@ function bendVoice(pointerId, event) {
   if (!voice) return;
   const ctx = audioContext();
   const width = Math.max(voice.pad.getBoundingClientRect().width, 1);
-  const dragRatio = Math.max(-1, Math.min(1, (event.clientX - voice.startX) / width));
-  const bend = dragRatio * state.bendRange;
+  const fretDistance = (event.clientX - voice.startX) / width;
+  const bend = Math.max(-12, Math.min(12, fretDistance * state.bendSemitonesPerFret));
   const bendRatio = 2 ** (bend / 12);
   const now = ctx.currentTime;
   voice.bend = bend;
@@ -158,7 +158,7 @@ function bendVoice(pointerId, event) {
     osc.frequency.cancelScheduledValues(now);
     osc.frequency.setTargetAtTime(voice.baseFrequency * multiple * bendRatio, now, 0.015);
   });
-  voice.pad.style.setProperty("--bend-x", `${dragRatio * 10}px`);
+  voice.pad.style.setProperty("--bend-x", `${Math.max(-12, Math.min(12, fretDistance * 8))}px`);
   renderStatus();
 }
 
