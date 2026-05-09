@@ -82,6 +82,8 @@ const els = {
   fretSelect: document.querySelector("#fretSelect"),
   reverbSelect: document.querySelector("#reverbSelect"),
   driveSelect: document.querySelector("#driveSelect"),
+  holdButton: document.querySelector("#holdButton"),
+  bendButton: document.querySelector("#bendButton"),
   panicButton: document.querySelector("#panicButton"),
   activeNotes: document.querySelector("#activeNotes"),
   chordName: document.querySelector("#chordName"),
@@ -98,6 +100,8 @@ const state = {
   bendSemitonesPerFret: 2,
   reverb: 0,
   drive: 0,
+  holdMode: false,
+  bendEnabled: true,
   audio: null,
   effects: null,
   voices: new Map(),
@@ -268,7 +272,11 @@ function toneSettings() {
   return { type: "triangle", filter: 2600, mix: [0.9, 0.16, 0.05] };
 }
 
-function startVoice(pointerId, midi, pad, event) {
+function voiceKeyForPad(pad) {
+  return `hold:${pad.dataset.string}:${pad.dataset.fret}`;
+}
+
+function startVoice(pointerId, midi, pad, event, held = false) {
   stopVoice(pointerId);
   const ctx = unlockAudio();
   const now = ctx.currentTime;
@@ -304,11 +312,13 @@ function startVoice(pointerId, midi, pad, event) {
     baseFrequency,
     startX: event.clientX,
     bend: 0,
+    held,
   });
   renderStatus();
 }
 
 function bendVoice(pointerId, event) {
+  if (!state.bendEnabled) return;
   const voice = state.voices.get(pointerId);
   if (!voice) return;
   const ctx = audioContext();
@@ -334,6 +344,15 @@ function stopVoice(pointerId) {
   envelopeStop(voice);
   state.voices.delete(pointerId);
   renderStatus();
+}
+
+function toggleHeldVoice(midi, pad, event) {
+  const key = voiceKeyForPad(pad);
+  if (state.voices.has(key)) {
+    stopVoice(key);
+    return;
+  }
+  startVoice(key, midi, pad, event, true);
 }
 
 function stopAllVoices() {
@@ -416,15 +435,25 @@ function renderBoard() {
       pad.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         pad.setPointerCapture(event.pointerId);
-        startVoice(event.pointerId, midi, pad, event);
+        if (state.holdMode) {
+          toggleHeldVoice(midi, pad, event);
+        } else {
+          startVoice(event.pointerId, midi, pad, event);
+        }
       });
       pad.addEventListener("pointermove", (event) => {
         event.preventDefault();
         bendVoice(event.pointerId, event);
       });
-      pad.addEventListener("pointerup", (event) => stopVoice(event.pointerId));
-      pad.addEventListener("pointercancel", (event) => stopVoice(event.pointerId));
-      pad.addEventListener("lostpointercapture", (event) => stopVoice(event.pointerId));
+      pad.addEventListener("pointerup", (event) => {
+        if (!state.holdMode) stopVoice(event.pointerId);
+      });
+      pad.addEventListener("pointercancel", (event) => {
+        if (!state.holdMode) stopVoice(event.pointerId);
+      });
+      pad.addEventListener("lostpointercapture", (event) => {
+        if (!state.holdMode) stopVoice(event.pointerId);
+      });
 
       els.board.appendChild(pad);
     }
@@ -469,6 +498,15 @@ function bindEvents() {
   els.driveSelect.addEventListener("change", (event) => {
     state.drive = Number(event.target.value);
     updateEffects();
+  });
+  els.holdButton.addEventListener("click", () => {
+    state.holdMode = !state.holdMode;
+    els.holdButton.classList.toggle("active", state.holdMode);
+    if (!state.holdMode) stopAllVoices();
+  });
+  els.bendButton.addEventListener("click", () => {
+    state.bendEnabled = !state.bendEnabled;
+    els.bendButton.classList.toggle("active", state.bendEnabled);
   });
   els.panicButton.addEventListener("click", resetAudio);
   window.addEventListener("blur", stopAllVoices);
