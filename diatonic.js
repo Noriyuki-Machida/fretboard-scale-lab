@@ -436,6 +436,14 @@ function startChord(rootPc, def, pad, { pulse = false, accent = false, sustain =
   };
 
   if (pulse && !sustain) {
+    if (state.instrument === "piano") {
+      const hold = Math.max(120, 60000 / state.bpm * durationBeats * 1.2);
+      window.setTimeout(() => {
+        document.querySelectorAll(".white-key.active, .black-key.active").forEach((key) => key.classList.remove("active"));
+        if (!state.fourBeat) pad.classList.remove("playing");
+      }, hold);
+      return () => {};
+    }
     const stopRatio = state.instrument === "strings" || state.instrument === "organ" ? 0.98 : 0.78;
     window.setTimeout(stop, Math.max(120, 60000 / state.bpm * durationBeats * stopRatio));
     return () => {};
