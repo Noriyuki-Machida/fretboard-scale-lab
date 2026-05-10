@@ -103,6 +103,7 @@ const state = {
   holdMode: false,
   bendEnabled: true,
   audio: null,
+  audioUnlocked: false,
   effects: null,
   voices: new Map(),
 };
@@ -190,10 +191,26 @@ function audioContext() {
 
 function unlockAudio() {
   const ctx = audioContext();
-  if (ctx.state === "suspended") {
+  if (ctx.state !== "running") {
     void ctx.resume();
   }
   ensureEffects(ctx);
+  return ctx;
+}
+
+function primeAudio() {
+  const ctx = unlockAudio();
+  if (state.audioUnlocked) return ctx;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.03);
+  osc.frequency.setValueAtTime(440, now);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.04);
+  state.audioUnlocked = true;
   return ctx;
 }
 
@@ -278,7 +295,7 @@ function voiceKeyForPad(pad) {
 
 function startVoice(pointerId, midi, pad, event, held = false) {
   stopVoice(pointerId);
-  const ctx = unlockAudio();
+  const ctx = primeAudio();
   const now = ctx.currentTime;
   const settings = toneSettings();
   const output = ctx.createGain();
@@ -378,6 +395,7 @@ function resetAudio() {
     void state.audio.close();
   }
   state.audio = null;
+  state.audioUnlocked = false;
   state.effects = null;
   renderStatus();
 }
@@ -434,6 +452,7 @@ function renderBoard() {
 
       pad.addEventListener("pointerdown", (event) => {
         event.preventDefault();
+        primeAudio();
         pad.setPointerCapture(event.pointerId);
         if (state.holdMode) {
           toggleHeldVoice(midi, pad, event);
@@ -469,6 +488,8 @@ function renderBoard() {
 function bindEvents() {
   document.addEventListener("contextmenu", (event) => event.preventDefault());
   document.addEventListener("selectstart", (event) => event.preventDefault());
+  document.addEventListener("pointerdown", primeAudio, { capture: true });
+  document.addEventListener("touchstart", () => primeAudio(), { capture: true, passive: true });
   els.keySelect.addEventListener("change", (event) => {
     state.key = Number(event.target.value);
     renderBoard();
