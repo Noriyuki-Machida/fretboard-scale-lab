@@ -110,6 +110,7 @@ button {
 
 .control-bar,
 .status-panel,
+.memory-panel,
 .pad-section,
 .keyboard-section {
   border: 1px solid var(--line);
@@ -161,6 +162,56 @@ input {
 
 .status-panel strong {
   font-size: 18px;
+}
+
+.memory-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.memory-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--muted);
+}
+
+.memory-heading strong {
+  color: var(--ink);
+}
+
+.memory-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 34px;
+  align-items: center;
+}
+
+.memory-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.memory-chip.active {
+  border-color: #111827;
+  background: var(--accent);
+  color: #fff;
+}
+
+.memory-empty {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .pad-section {

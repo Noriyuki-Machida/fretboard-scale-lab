@@ -55,13 +55,26 @@
             <option value="guitar">Guitar</option>
             <option value="strings">Strings</option>
             <option value="organ">Organ</option>
+            <option value="lead">Lead Synth</option>
           </select>
         </label>
         <label>
           <span>BPM</span>
           <input id="bpmInput" type="number" min="40" max="240" step="1" value="100" />
         </label>
-        <button id="fourBeatButton" type="button">4つ打ち</button>
+        <label>
+          <span>リズム</span>
+          <select id="rhythmSelect">
+            <option value="4">4 Beat</option>
+            <option value="8" selected>8 Beat</option>
+            <option value="whole">Whole</option>
+            <option value="drone">Drone</option>
+          </select>
+        </label>
+        <button id="autoButton" type="button">モード: マニュアル</button>
+        <button id="startButton" type="button">スタート</button>
+        <button id="undoMemoryButton" type="button">戻す</button>
+        <button id="clearMemoryButton" type="button">クリア</button>
         <button id="stopButton" type="button">停止</button>
       </section>
 
@@ -74,6 +87,18 @@
           <span>機能</span>
           <strong id="currentFunction">-</strong>
         </div>
+        <div>
+          <span>再生モード</span>
+          <strong id="playMode">リアルタイム</strong>
+        </div>
+      </section>
+
+      <section class="memory-panel" aria-label="chord memory">
+        <div class="memory-heading">
+          <span>コードメモリー</span>
+          <strong id="memoryCount">0 / 8</strong>
+        </div>
+        <div id="memoryList" class="memory-list"></div>
       </section>
 
       <section class="pad-section" aria-label="chord pads">
