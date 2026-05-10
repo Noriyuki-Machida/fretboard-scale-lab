@@ -104,11 +104,58 @@ function chordId(rootPc, def) {
   return `${rootPc}:${def.roman}:${state.chordType}`;
 }
 
+function permutations(items) {
+  if (items.length <= 1) return [items];
+  return items.flatMap((item, index) => {
+    const rest = [...items.slice(0, index), ...items.slice(index + 1)];
+    return permutations(rest).map((perm) => [item, ...perm]);
+  });
+}
+
+function pitchNear(notePc, targetMidi) {
+  const base = notePc + 12 * Math.round((targetMidi - notePc) / 12);
+  const lower = base - 12;
+  const upper = base + 12;
+  return [lower, base, upper].reduce((best, candidate) => (Math.abs(candidate - targetMidi) < Math.abs(best - targetMidi) ? candidate : best), base);
+}
+
+function ascendingPitches(pitches) {
+  return pitches.reduce((result, pitch) => {
+    let next = pitch;
+    while (result.length && next <= result[result.length - 1]) next += 12;
+    result.push(next);
+    return result;
+  }, []);
+}
+
+function voicingTargets(count) {
+  const targets = {
+    low: [48, 52, 55, 59],
+    mid: [60, 64, 67, 71],
+    high: [72, 76, 79, 83],
+  };
+  return targets[state.octave].slice(0, count);
+}
+
+function smoothChordTones(rootPc, def) {
+  const pitchClasses = [...new Set(def.intervals.map((interval) => (rootPc + interval) % 12))];
+  const targets = voicingTargets(pitchClasses.length);
+  let best = null;
+
+  permutations(pitchClasses).forEach((order) => {
+    const pitches = ascendingPitches(order.map((notePc, index) => pitchNear(notePc, targets[index])));
+    const distance = pitches.reduce((sum, pitch, index) => sum + Math.abs(pitch - targets[index]), 0);
+    const span = pitches[pitches.length - 1] - pitches[0];
+    const score = distance + Math.max(0, span - 12) * 0.8;
+    if (!best || score < best.score) best = { pitches, score };
+  });
+
+  return best?.pitches ?? [];
+}
+
 function chordMidis(rootPc, def) {
-  const chordRoots = { low: 48, mid: 60, high: 72 };
-  const rootMidi = chordRoots[state.octave] + rootPc;
-  const chordTones = def.intervals.map((interval) => rootMidi + interval);
   const bassMidi = 36 + rootPc;
+  const chordTones = smoothChordTones(rootPc, def);
   return [bassMidi, ...chordTones];
 }
 
